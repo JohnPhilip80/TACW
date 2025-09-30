@@ -1,0 +1,56 @@
+import mysql.connector
+
+class MobileRepository:
+
+    def __init__(self):
+        pass
+
+    def executeQuery(self,sql,params=None,fetch_one=False):
+        new_id=0
+        connection = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                password="Admin@123",
+                database="john_mobile"
+            )
+        cursor = connection.cursor(dictionary=True)
+        try:
+            if params:
+                cursor.execute(sql,params)
+            else:
+                cursor.execute(sql)
+
+            if sql.strip().upper().startswith(("INSERT",)):
+                connection.commit()
+                return cursor.lastrowid
+            elif sql.strip().upper().startswith(("UPDATE", "DELETE")):
+                connection.commit()
+                return cursor.rowcount
+            else:
+                if fetch_one:
+                    result = cursor.fetchone()
+                else:
+                    result = cursor.fetchall()
+                return result
+        except Exception as e:
+            connection.rollback()
+            print(f"Database Error: {e}")
+            return None
+        finally:
+            cursor.close()
+            connection.close()
+
+    def readMobiles(self):
+        return self.executeQuery("SELECT id,brand,owner,price FROM mobile")
+    
+    def readMobile(self,id):
+        return self.executeQuery("SELECT id,brand,owner,price FROM mobile WHERE id = %s",(id,),True)
+    
+    def insertMobile(self,br,ow,pr):
+        return self.executeQuery("INSERT INTO mobile (brand,owner,price) VALUES (%s,%s,%s)",(br,ow,pr))
+        
+    def modifyMobile(self,id,br,ow,pr):
+        return self.executeQuery("UPDATE mobile SET brand=%s, owner=%s, price=%s WHERE id=%s",(br,ow,pr,id))
+    
+    def removeMobile(self,id):
+        return self.executeQuery("DELETE FROM mobile WHERE id = %s",(id,))
